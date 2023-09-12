@@ -1,6 +1,7 @@
 import threading
 import time
 import openai
+import litellm
 from app.pkgs.tools.llm_interface import LLMInterface
 from config import MODE, LLM_MODEL, GPT_KEYS
 
@@ -60,14 +61,23 @@ class LLMBase(LLMInterface):
         print(f"provider_data:{provider_data}")
 
         try:
-            response = openai.ChatCompletion.create(
-                model= LLM_MODEL,
-                deployment_id = provider_data.get("deployment_id", None),
-                messages=context,
-                max_tokens=10000,
-                temperature=0,
-            )
-
+            if LLM_MODEL in litellm.models:
+                    # see litellm supported models here: https://litellm.readthedocs.io/en/latest/supported/
+                    response = litellm.completion(
+                    model= LLM_MODEL,
+                    messages=context,
+                    max_tokens=12000,
+                    temperature=0,
+                )
+            else:
+                response = openai.ChatCompletion.create(
+                    model= LLM_MODEL,
+                    deployment_id = provider_data.get("deployment_id", None),
+                    messages=context,
+                    max_tokens=10000,
+                    temperature=0,
+                )
+            
             response_text = response["choices"][0]["message"]["content"]
             total_tokens = response["usage"]["total_tokens"]
             print("chatGPT - response_text:"+response_text, flush=True)
